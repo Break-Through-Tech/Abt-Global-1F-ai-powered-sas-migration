@@ -4,7 +4,15 @@
 
 ### 👥 **Team Members**
 
-**AI Coach:** Aram Ramos
+
+| Name             | GitHub Handle | Contribution                                                             |
+|------------------|---------------|--------------------------------------------------------------------------|
+|  Sameer Desale   | @dsamee | Challenge Advisor            |
+|  Aram Ramos  | @aramseries  | AI Coach  |
+|      |   |                  |
+|       |        |   |
+|        |     |           |
+
 
 ---
 
