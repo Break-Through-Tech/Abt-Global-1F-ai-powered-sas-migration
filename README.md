@@ -9,7 +9,7 @@
 |------------------|---------------|--------------------------------------------------------------------------|
 |  Sameer Desale   | @dsamee | Challenge Advisor            |
 |  Aram Ramos  | @aramseries  | AI Coach  |
-|      |   |                  |
+|  Nathan Zheng  |  @nathanz19  |  Contributor  |
 |       |        |   |
 |        |     |           |
 
