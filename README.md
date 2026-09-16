@@ -12,7 +12,7 @@
 |  Nathan Zheng  |  @nathanz19  |  Contributor  |
 |  Jared Anastacio Ferrer |  @JaredSkates  |  Contributor  |
 |  Haluk Yuzukirmizi |  @hyuzukirmizi  |  Contributor  |
-|        |     |           |
+|  James Lacoste      | @JLac17    | Contributor          |
 
 
 ---
