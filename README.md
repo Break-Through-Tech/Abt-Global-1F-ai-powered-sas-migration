@@ -11,6 +11,7 @@
 |  Aram Ramos  | @aramseries  | AI Coach  |
 |  Nathan Zheng  |  @nathanz19  |  Contributor  |
 |  Jared Anastacio Ferrer |  @JaredSkates  |  Contributor  |
+|  Haluk Yuzukirmizi |  @hyuzukirmizi  |  Contributor  |
 |        |     |           |
 
 
