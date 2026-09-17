@@ -74,9 +74,9 @@ The following resources will help your team understand the problem space and pot
 
 **Technical Tutorials: Intro to SAS**
 
-https://stats.oarc.ucla.edu/sas/modules/
-https://support.sas.com/en/documentation.html
-https://communities.sas.com/t5/SAS-Communities-Library/Tip-K-means-clustering-in-SAS-comparing-PROC-FASTCLUS-and-PROC/ta-p/221369
+- https://stats.oarc.ucla.edu/sas/modules/  
+- https://support.sas.com/en/documentation.html  
+- https://communities.sas.com/t5/SAS-Communities-Library/Tip-K-means-clustering-in-SAS-comparing-PROC-FASTCLUS-and-PROC/ta-p/221369  
 
 *Feel free to explore beyond these, and share anything interesting you find with me!*
 
