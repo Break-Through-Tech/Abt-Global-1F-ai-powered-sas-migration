@@ -72,20 +72,11 @@ Use these milestones to guide your work. Your team will create a **GitHub Projec
 
 The following resources will help your team understand the problem space and potential technical approaches for this project:
 
-**Background Reading:**
-- [e.g., Link to an article or blog post about the problem domain]
-- [e.g., Link to an industry report or case study]
+**Technical Tutorials: Intro to SAS**
 
-**Technical Tutorials:**
-- [e.g., Link to a free tutorial on the ML technique(s) involved]
-- [e.g., Link to documentation for a key library or tool]
-
-**Code Examples:**
-- [e.g., Link to a relevant GitHub repo]
-- [e.g., Link to a sample implementation or starter code]
-
-**Other:**
-- [Links to any additional resources — e.g., papers, videos, podcasts, etc.]
+https://stats.oarc.ucla.edu/sas/modules/
+https://support.sas.com/en/documentation.html
+https://communities.sas.com/t5/SAS-Communities-Library/Tip-K-means-clustering-in-SAS-comparing-PROC-FASTCLUS-and-PROC/ta-p/221369
 
 *Feel free to explore beyond these, and share anything interesting you find with me!*
 
