@@ -13,6 +13,7 @@
 |  Jared Anastacio Ferrer |  @JaredSkates  |  Contributor  |
 |  Haluk Yuzukirmizi |  @hyuzukirmizi  |  Contributor  |
 |  James Lacoste      | @JLac17    | Contributor          |
+|  Varun Kini    | @vkini19    | Contributor    |
 
 
 ---
