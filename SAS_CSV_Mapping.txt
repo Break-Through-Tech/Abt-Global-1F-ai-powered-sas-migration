@@ -1,0 +1,17 @@
+SAS Program to CSV Output Mapping
+
+Program 0: Data and Measure Standardization
+- LESS100_MEASURE.csv: List of hospital quality measures dropped (<= 100 hospitals).
+- MEASURE_AVERAGE_STDDEV_2025JUL.csv: Calculated mean and standard deviation of original measure scores.
+- STD_DATA_2025JUL_ANALYSIS.csv: Final analysis file with standardized, re-directed scores.
+
+Program 1: First Stage - Simple Average of Measure Scores
+- OUTCOME_MORTALITY.csv: Group scores for the Mortality domain.
+- OUTCOME_SAFETY.csv: Group scores for the Safety of Care domain.
+- OUTCOME_READMISSION.csv: Group scores for the Readmission domain.
+- PTEXP.csv: Group scores for the Patient Experience domain.
+- PROCESS.csv: Group scores for the Timely and Effective Care domain.
+
+Program 2: Second Stage - Weighted Average and Categorize Star
+- STAR_2025JUL.csv: Final hospital-level file including summary scores, peer groupings, and Star Ratings.
+- NATIONAL_AVERAGE_2025JUL.csv: National mean values for summary scores and individual group scores.
