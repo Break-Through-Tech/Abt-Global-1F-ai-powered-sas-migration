@@ -1,1 +1,9 @@
 .env
+
+#documentation
+documentation/
+.documentation/
+
+#python environment
+.venv/
+__pycache__/
