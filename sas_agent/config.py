@@ -22,6 +22,11 @@ RUNS_DIR = REPO_ROOT / "runs"  # every attempt; excluded from Git (D-050)
 # (reads GOOGLE_API_KEY). Model codes: https://ai.google.dev/gemini-api/docs/models
 MODEL = os.getenv("SAS_AGENT_MODEL", "google_genai:gemini-3.8-flash")
 
+# Limits of the fix loop (design doc 6.4.7, D-036): corrections per run, and corrections in a row
+# that do not improve on the best attempt (the stuck rule).
+MAX_CORRECTIONS = 3
+MAX_NO_IMPROVEMENT = 2
+
 
 @dataclass(frozen=True)
 class SasProgram:
