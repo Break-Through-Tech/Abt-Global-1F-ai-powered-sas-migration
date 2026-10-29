@@ -16,4 +16,9 @@ dependencies = [
 dev = [
     "pdfplumber>=0.11.10",
     "pymupdf>=1.28.2",
+    "pytest>=9.2.0",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

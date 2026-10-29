@@ -7,3 +7,6 @@ documentation/
 #python environment
 .venv/
 __pycache__/
+
+#pipeline run records (translation attempts, outputs, reports)
+runs/
