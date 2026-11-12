@@ -19,20 +19,17 @@ def main() -> None:
     )
     args = parser.parse_args()
 
-    comparator = None
+    agents = {}
     if args.fix_loop:
+        from .agents import MissingAgent, correction_agent_corrector, validation_agent_validator
         try:
-            from .comparator import compare as comparator
-        except ModuleNotFoundError as e:
-            if e.name != f"{__package__}.comparator":
-                raise
-            raise SystemExit("The fix loop needs sas_agent/comparator.py, which is not written yet (design doc 6.12.4).")
+            agents = {"validator": validation_agent_validator(), "corrector": correction_agent_corrector()}
+        except MissingAgent as e:
+            raise SystemExit(f"The fix loop needs the other agents: {e}")
 
-    app = build_graph(mode="fix_loop" if args.fix_loop else "baseline", comparator=comparator)
+    app = build_graph(mode="fix_loop" if args.fix_loop else "baseline", **agents)
     run_id = runs.new_run_id()
     initial = {"run_id": run_id}
-    if args.fix_loop:
-        initial["input_dir"] = str(runs.prepare_inputs(run_id))
 
     prior_code: dict[str, str] = {}
     # Include promoted translations of earlier programs as context, even if not re-run this time.

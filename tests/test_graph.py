@@ -1,156 +1,173 @@
-"""Scenario tests for the fix loop (design doc 6.12.7).
+"""Scenario tests for the fix loop.
 
-They use a fake chat model, a fake comparator, and a scripted Corrector, and run the real static checks
-and executor. They make no API calls.
+They use a fake chat model and fake validator, corrector, and repairer callables in place of the other
+agents, so they need neither an API key nor the teammates' packages.
 """
 
 import json
-from pathlib import Path
+import sys
+from types import SimpleNamespace
 
-import pandas as pd
 import pytest
 from langchain_core.language_models.fake_chat_models import FakeListChatModel
 
-from sas_agent.comparison import CheckResult, RedactedReport
+from sas_agent.agents import MissingAgent, ValidationView, correction_agent_corrector, validation_agent_validator
 from sas_agent.graph import RECURSION_LIMIT, build_graph, route
 
-
-def script(a: int = 1, b: int = 2) -> str:
-    """A script that writes OUT.csv; the fake comparator expects a=1 and b=2."""
-    return (
-        "import os\nimport pandas as pd\n"
-        f"pd.DataFrame({{'a': [{a}], 'b': [{b}]}}).to_csv(os.path.join(os.environ['SAS_OUTPUT_DIR'], 'OUT.csv'), index=False)\n"
-    )
-
-
-SYNTAX_ERROR = "x = (\n"
-# Fails with KeyError: '010001', a hospital identifier read from the input data.
-RUNTIME_ERROR = (
-    "import os\nimport pandas as pd\n"
-    "df = pd.read_csv(os.path.join(os.environ['SAS_INPUT_DIR'], 'in.csv'), dtype={'PROVIDER_ID': str})\n"
-    "lookup = {}\n"
-    "value = lookup[df['PROVIDER_ID'][0]]\n"
-)
+# Scripts the fake translator and repairer return, and the validation result each one gets.
+# Ranks are lower-is-better tuples, like the validation agent's (stage, failing checks, mismatches, error).
+GOOD = "result = 'good'\n"
+ONE_FAILING = "result = 'one failing check'\n"
+TWO_FAILING = "result = 'two failing checks'\n"
+CRASHES = "result = 'crashes'\n"
+RESULTS = {
+    GOOD: ("PASSED", (-2, 0, 0, 0.0)),
+    ONE_FAILING: ("TRIAGED", (-2, 1, 4566, 0.5)),
+    TWO_FAILING: ("TRIAGED", (-2, 2, 9132, 0.5)),
+    CRASHES: ("TRIAGED", (-1, 1, 0, 0.0)),
+}
 
 
-def fake_comparator(program_id: str, output_dir: Path, work_dir: Path) -> RedactedReport:
-    out = Path(output_dir) / "OUT.csv"
-    if not out.exists():
-        return RedactedReport([CheckResult("OUT", "file_exists", False)])
-    row = pd.read_csv(out).iloc[0]
-    checks = []
-    for column, expected in (("a", 1), ("b", 2)):
-        ok = row[column] == expected
-        checks.append(CheckResult("OUT", "values", ok, column=column,
-                                  mismatch=None if ok else "<11", error_bin=None if ok else ">=1e-3"))
-    return RedactedReport(checks)
+class FakeValidator:
+    def __init__(self):
+        self.calls = []
+
+    def __call__(self, program_id, code, attempt_dir):
+        self.calls.append(code)
+        state, rank = RESULTS[code]
+        # Extra fields stand for the rest of a ValidationResult; the harness must ignore them.
+        return {"program_id": program_id, "next_state": state, "rank": rank, "events": ["..."],
+                "fix_request": None if state == "PASSED" else f"checks failed for {code.strip()}"}
 
 
-class ScriptedCorrector:
-    """Returns the given scripts in order and records the context of each call."""
+class FakeCorrector:
+    def __init__(self):
+        self.calls = []
 
-    def __init__(self, *scripts: str):
-        self.scripts = list(scripts)
-        self.contexts: list[dict] = []
+    def __call__(self, program_id, code, validation, *, analysis, prior_code, history):
+        self.calls.append({"code": code, "validation": validation, "history": history})
+        return f"REPAIR PROMPT for {code.strip()}"
 
-    def __call__(self, context: dict) -> str:
-        self.contexts.append(context)
-        return self.scripts.pop(0)
+
+class ScriptedRepairer:
+    """Returns the given scripts in order; an exception instance is raised instead of returned."""
+
+    def __init__(self, *replies):
+        self.replies = list(replies)
+        self.prompts = []
+
+    def __call__(self, prompt):
+        self.prompts.append(prompt)
+        reply = self.replies.pop(0)
+        if isinstance(reply, Exception):
+            raise reply
+        return reply
 
 
 @pytest.fixture
 def run(tmp_path):
-    inputs = tmp_path / "inputs"
-    inputs.mkdir()
-    (inputs / "in.csv").write_text("PROVIDER_ID,x\n010001,1.5\n")
-
-    def _run(first_script: str, corrector=None, **kwargs):
-        llm = FakeListChatModel(responses=["## Analysis", f"```python\n{first_script}```"])
-        app = build_graph(llm, mode="fix_loop", comparator=fake_comparator, corrector=corrector or ScriptedCorrector(),
-                          runs_dir=tmp_path / "runs", migrated_dir=tmp_path / "migrated", **kwargs)
-        return app.invoke({"program_id": "program0", "run_id": "r1", "input_dir": str(inputs)},
-                          {"recursion_limit": RECURSION_LIMIT})
+    def _run(first_reply, *repairs, translation_reply=None):
+        validator, corrector, repairer = FakeValidator(), FakeCorrector(), ScriptedRepairer(*repairs)
+        reply = translation_reply if translation_reply is not None else f"```python\n{first_reply}```"
+        app = build_graph(FakeListChatModel(responses=["## Analysis", reply]), mode="fix_loop",
+                          validator=validator, corrector=corrector, repairer=repairer,
+                          runs_dir=tmp_path / "runs", migrated_dir=tmp_path / "migrated")
+        state = app.invoke({"program_id": "program0", "run_id": "r1"}, {"recursion_limit": RECURSION_LIMIT})
+        return state, validator, corrector, repairer
 
     return _run
 
 
 def test_passes_first_time_and_is_promoted(run, tmp_path):
-    corrector = ScriptedCorrector()
-    state = run(script(), corrector)
+    state, validator, corrector, _ = run(GOOD)
     assert (state["status"], state["attempt"]) == ("PASSED", 1)
-    assert corrector.contexts == []
+    assert corrector.calls == []
     promoted = tmp_path / "migrated" / "program0"
-    assert (promoted / "program0.py").read_text() == script()
+    assert (promoted / "program0.py").read_text() == GOOD
     provenance = json.loads((promoted / "provenance.json").read_text())
-    assert provenance["run_id"] == "r1" and provenance["attempt"] == 1
-    assert provenance["comparison"] == {"checks": 2, "failing": 0}
+    assert provenance["attempt"] == 1 and provenance["validation"]["next_state"] == "PASSED"
 
 
-def test_syntax_error_is_corrected_before_execution(run, tmp_path):
-    corrector = ScriptedCorrector(script())
-    state = run(SYNTAX_ERROR, corrector)
-    assert (state["status"], state["attempt"]) == ("PASSED", 2)
-    assert "SyntaxError" in corrector.contexts[0]["fix_request"]
-    assert not (tmp_path / "runs" / "r1" / "program0" / "attempt-1" / "ai" / "exec_status.json").exists()
-
-
-def test_runtime_error_is_corrected_without_leaking_data(run):
-    corrector = ScriptedCorrector(script())
-    state = run(RUNTIME_ERROR, corrector)
-    assert state["status"] == "PASSED"
-    context = corrector.contexts[0]
-    assert "KeyError" in context["fix_request"]
-    assert "010001" not in json.dumps(context)
-
-
-def test_wrong_values_are_corrected(run):
-    corrector = ScriptedCorrector(script())
-    state = run(script(b=5), corrector)
-    assert (state["status"], state["attempt"]) == ("PASSED", 2)
-    assert "column b" in corrector.contexts[0]["fix_request"]
-
-
-def test_escalates_after_three_corrections(run, tmp_path):
-    # Every correction improves, so only the correction limit stops the loop.
-    corrector = ScriptedCorrector(RUNTIME_ERROR, script(a=9, b=9), script(b=9))
-    state = run(SYNTAX_ERROR, corrector)
-    assert (state["status"], state["corrections"]) == ("ESCALATED", 3)
-    assert state["attempt"] == 4 and state["code"] == script(b=9)  # the best attempt is kept
-    assert (tmp_path / "runs" / "r1" / "program0" / "escalation.json").exists()
-    assert not (tmp_path / "migrated").exists()
-
-
-def test_stuck_rule_escalates_after_two_corrections_without_improvement(run):
-    corrector = ScriptedCorrector(script(b=9), script(b=9))
-    state = run(script(b=9), corrector)
-    assert (state["status"], state["corrections"], state["no_improvement"]) == ("ESCALATED", 2, 2)
+def test_passes_after_one_correction(run, tmp_path):
+    state, validator, corrector, repairer = run(ONE_FAILING, GOOD)
+    assert (state["status"], state["attempt"], state["corrections"]) == ("PASSED", 2, 1)
+    call = corrector.calls[0]
+    assert call["code"] == ONE_FAILING
+    assert call["validation"]["next_state"] == "TRIAGED" and call["validation"]["fix_request"]
+    assert call["history"] == [{"program_id": "program0", "rank": list(RESULTS[ONE_FAILING][1])}]
+    assert repairer.prompts == [f"REPAIR PROMPT for {ONE_FAILING.strip()}"]
+    attempt2 = tmp_path / "runs" / "r1" / "program0" / "attempt-2" / "ai"
+    assert (attempt2 / "script.py").read_text() == GOOD and (attempt2 / "repair_prompt.md").exists()
 
 
 def test_regression_is_rejected(run):
-    first = script(b=9)  # one failing check
-    corrector = ScriptedCorrector(RUNTIME_ERROR, script())  # the first correction is worse
-    state = run(first, corrector)
+    # The first correction makes things worse; the next one starts from the best attempt.
+    state, _, corrector, _ = run(ONE_FAILING, TWO_FAILING, GOOD)
     assert (state["status"], state["attempt"]) == ("PASSED", 3)
-    assert corrector.contexts[1]["code"] == first  # corrected from the best attempt, not the regression
+    assert [c["code"] for c in corrector.calls] == [ONE_FAILING, ONE_FAILING]
 
 
-def test_missing_fix_prompt_names_its_owner(tmp_path):
-    # Without a corrector argument the graph uses prompts/fix.md, which the translation team writes.
-    llm = FakeListChatModel(responses=["## Analysis", f"```python\n{SYNTAX_ERROR}```"])
-    app = build_graph(llm, mode="fix_loop", comparator=fake_comparator,
-                      runs_dir=tmp_path / "runs", migrated_dir=tmp_path / "migrated")
-    with pytest.raises(FileNotFoundError, match="translation team"):
-        app.invoke({"program_id": "program0", "run_id": "r1", "input_dir": str(tmp_path)},
-                   {"recursion_limit": RECURSION_LIMIT})
+def test_correction_limit_escalates_and_keeps_the_best_attempt(run, tmp_path):
+    # Every correction improves, so only the limit of 3 corrections stops the loop.
+    state, _, corrector, _ = _improving_run(run)
+    assert (state["status"], state["corrections"]) == ("ESCALATED", 3)
+    assert state["code"] == ONE_FAILING and state["attempt"] == 4
+    assert json.loads((tmp_path / "runs" / "r1" / "program0" / "escalation.json").read_text())["reason"] == "LIMIT"
+    assert not (tmp_path / "migrated").exists()
+
+
+def _improving_run(run):
+    # Ranks improve at every attempt but never pass: crash -> two failing -> ... -> one failing.
+    worse = "result = 'three failing checks'\n"
+    RESULTS[worse] = ("TRIAGED", (-2, 3, 13698, 0.5))
+    try:
+        return run(CRASHES, worse, TWO_FAILING, ONE_FAILING)
+    finally:
+        del RESULTS[worse]
+
+
+def test_stuck_rule_escalates_after_two_corrections_without_improvement(run):
+    state, *_ = run(ONE_FAILING, ONE_FAILING, ONE_FAILING)
+    assert (state["status"], state["corrections"], state["no_improvement"]) == ("ESCALATED", 2, 2)
+
+
+def test_translation_without_code_block_escalates(run):
+    state, validator, *_ = run(None, translation_reply="I cannot translate this.")
+    assert state["status"] == "ESCALATED" and state["code"] == ""
+    assert validator.calls == []
+
+
+def test_repair_without_code_block_escalates_with_best_attempt(run):
+    state, *_ = run(ONE_FAILING, ValueError("no code block"))
+    assert state["status"] == "ESCALATED" and state["code"] == ONE_FAILING
 
 
 def test_baseline_is_single_pass(tmp_path):
-    llm = FakeListChatModel(responses=["## Analysis", f"```python\n{script()}```"])
+    llm = FakeListChatModel(responses=["## Analysis", f"```python\n{GOOD}```"])
     app = build_graph(llm, mode="baseline", runs_dir=tmp_path / "runs", migrated_dir=tmp_path / "migrated")
     state = app.invoke({"program_id": "program0", "run_id": "r1"})
     assert state["status"] == "BASELINE"
     assert (tmp_path / "runs" / "r1" / "program0" / "attempt-1" / "ai" / "script.py").exists()
     assert not (tmp_path / "migrated").exists()
+
+
+def test_validation_view_reads_objects_and_dicts():
+    obj = SimpleNamespace(next_state="TRIAGED", rank=(-2, 1, 3, 0.1), fix_request="x", extra=1)
+    assert ValidationView.of(obj).rank == (-2, 1, 3, 0.1)
+    assert ValidationView.of({"next_state": "PASSED", "rank": [0]}).passed
+    with pytest.raises(ValueError):
+        ValidationView.of({"next_state": "DONE", "rank": [0]})
+    with pytest.raises(ValueError):
+        ValidationView.of({"next_state": "TRIAGED", "rank": [0], "fix_request": ""})
+
+
+def test_missing_teammate_packages_name_their_branch(monkeypatch):
+    monkeypatch.setitem(sys.modules, "validation_agent", None)
+    monkeypatch.setitem(sys.modules, "correction_agent", None)
+    with pytest.raises(MissingAgent, match="branch validation_agent"):
+        validation_agent_validator()
+    with pytest.raises(MissingAgent, match="branch feature/correction_agent"):
+        correction_agent_corrector()
 
 
 def test_tracing_is_refused(monkeypatch):
@@ -159,11 +176,11 @@ def test_tracing_is_refused(monkeypatch):
         build_graph(FakeListChatModel(responses=[]))
 
 
-def test_fix_loop_needs_a_comparator():
-    with pytest.raises(ValueError, match="comparator"):
+def test_fix_loop_needs_validator_and_corrector():
+    with pytest.raises(ValueError, match="validator and a corrector"):
         build_graph(FakeListChatModel(responses=[]), mode="fix_loop")
 
 
 def test_undefined_transition_is_an_error():
     with pytest.raises(RuntimeError, match="No transition"):
-        route("execute", {"event": "ALL_PASS"})
+        route("validate", {"event": "REPAIRED"})
