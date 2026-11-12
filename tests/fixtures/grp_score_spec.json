@@ -1,0 +1,389 @@
+{
+  "unit": {
+    "id": "M.grp_score",
+    "kind": "macro",
+    "source": "Star_Macros.sas",
+    "lines": [
+      28,
+      63
+    ],
+    "source_hash": "95d43e59c684fdfd9ca55cf80e633f2a86d7877e64a44015c93ff76ed3f3db3d"
+  },
+  "facts": {
+    "params": [
+      "indsn",
+      "gp",
+      "varlist",
+      "nmeasure",
+      "Out_avg"
+    ],
+    "unused_params": [
+      "gp"
+    ],
+    "output_params": [
+      "Out_avg"
+    ],
+    "steps": [
+      {
+        "id": "s1",
+        "kind": "DATA",
+        "lines": [
+          29,
+          45
+        ],
+        "reads": [
+          "indsn"
+        ],
+        "writes": [
+          "dat0"
+        ]
+      },
+      {
+        "id": "s2",
+        "kind": "PROC STANDARD",
+        "lines": [
+          48,
+          48
+        ],
+        "reads": [
+          "dat0"
+        ],
+        "writes": [
+          "dat1"
+        ]
+      },
+      {
+        "id": "s3",
+        "kind": "PROC MEANS",
+        "lines": [
+          51,
+          54
+        ],
+        "reads": [
+          "dat0"
+        ],
+        "writes": [
+          "new"
+        ]
+      },
+      {
+        "id": "s4",
+        "kind": "PROC SQL",
+        "lines": [
+          56,
+          60
+        ],
+        "reads": [
+          "dat0",
+          "new"
+        ],
+        "writes": [
+          "dat2"
+        ]
+      },
+      {
+        "id": "s5",
+        "kind": "DATA",
+        "lines": [
+          62,
+          62
+        ],
+        "reads": [
+          "dat2",
+          "dat1"
+        ],
+        "writes": [
+          "Out_avg"
+        ]
+      }
+    ],
+    "constructs": [
+      "array",
+      "do_loop",
+      "sum_of",
+      "proc_standard",
+      "proc_means_ods",
+      "proc_sql",
+      "sql_cross_join",
+      "merge_by"
+    ],
+    "macro_vars_used": [],
+    "macro_vars_created": [],
+    "side_effects": {
+      "work_datasets_left": [
+        "dat0",
+        "dat1",
+        "new",
+        "dat2"
+      ],
+      "read_downstream": []
+    },
+    "call_sites": [
+      {
+        "caller": "program1:L43",
+        "program_id": "program1",
+        "line": 43,
+        "args": [
+          {
+            "param": "indsn",
+            "value": "R.Std_data_2025Jul_analysis"
+          },
+          {
+            "param": "gp",
+            "value": "OM"
+          },
+          {
+            "param": "varlist",
+            "value": "&measure_OM"
+          },
+          {
+            "param": "nmeasure",
+            "value": "&measure_OM_cnt"
+          },
+          {
+            "param": "Out_avg",
+            "value": "R.Outcome_mortality"
+          }
+        ]
+      },
+      {
+        "caller": "program1:L61",
+        "program_id": "program1",
+        "line": 61,
+        "args": [
+          {
+            "param": "indsn",
+            "value": "R.Std_data_2025Jul_analysis"
+          },
+          {
+            "param": "gp",
+            "value": "OS"
+          },
+          {
+            "param": "varlist",
+            "value": "&measure_OS"
+          },
+          {
+            "param": "nmeasure",
+            "value": "&measure_OS_cnt"
+          },
+          {
+            "param": "Out_avg",
+            "value": "R.Outcome_safety"
+          }
+        ]
+      },
+      {
+        "caller": "program1:L80",
+        "program_id": "program1",
+        "line": 80,
+        "args": [
+          {
+            "param": "indsn",
+            "value": "R.Std_data_2025Jul_analysis"
+          },
+          {
+            "param": "gp",
+            "value": "OR"
+          },
+          {
+            "param": "varlist",
+            "value": "&measure_OR"
+          },
+          {
+            "param": "nmeasure",
+            "value": "&measure_OR_cnt"
+          },
+          {
+            "param": "Out_avg",
+            "value": "R.Outcome_readmission"
+          }
+        ]
+      },
+      {
+        "caller": "program1:L101",
+        "program_id": "program1",
+        "line": 101,
+        "args": [
+          {
+            "param": "indsn",
+            "value": "R.Std_data_2025Jul_analysis"
+          },
+          {
+            "param": "gp",
+            "value": "PtExp"
+          },
+          {
+            "param": "varlist",
+            "value": "&measure_PtExp"
+          },
+          {
+            "param": "nmeasure",
+            "value": "&measure_PtExp_cnt"
+          },
+          {
+            "param": "Out_avg",
+            "value": "R.PtExp"
+          }
+        ]
+      },
+      {
+        "caller": "program1:L121",
+        "program_id": "program1",
+        "line": 121,
+        "args": [
+          {
+            "param": "indsn",
+            "value": "R.Std_data_2025Jul_analysis"
+          },
+          {
+            "param": "gp",
+            "value": "Process"
+          },
+          {
+            "param": "varlist",
+            "value": "&measure_Process"
+          },
+          {
+            "param": "nmeasure",
+            "value": "&measure_Process_cnt"
+          },
+          {
+            "param": "Out_avg",
+            "value": "R.Process"
+          }
+        ]
+      }
+    ]
+  },
+  "purpose": "Score one measure group per hospital: average the hospital's available standardized measures, then standardize that average across hospitals.",
+  "contract": {
+    "function": "grp_score",
+    "inputs": [
+      {
+        "name": "indsn",
+        "type": "DataFrame",
+        "key": "PROVIDER_ID",
+        "requires": [
+          "PROVIDER_ID",
+          "*varlist"
+        ]
+      },
+      {
+        "name": "varlist",
+        "type": "list[str]",
+        "requires": []
+      }
+    ],
+    "returns": [
+      {
+        "name": "Out_avg",
+        "columns": [
+          "PROVIDER_ID",
+          "*varlist",
+          "C1..Cn",
+          "total_cnt",
+          "measure_wt",
+          "score_before_std",
+          "Mean",
+          "StdDev",
+          "grp_score"
+        ],
+        "rows": "one per row of indsn, same order, including hospitals with no measures"
+      }
+    ],
+    "omitted_params": [
+      {
+        "param": "gp",
+        "reason": "unused"
+      },
+      {
+        "param": "nmeasure",
+        "reason": "equals len(varlist)"
+      }
+    ]
+  },
+  "logic": [
+    {
+      "step": "s1",
+      "risks": [
+        "S-02"
+      ],
+      "text": "Ck = 1 if measure k is non-missing else 0. total_cnt = sum of Ck. If total_cnt > 0: measure_wt = 1/total_cnt and avg = (sum of non-missing measures) x measure_wt. Otherwise measure_wt and avg are missing."
+    },
+    {
+      "step": "s2",
+      "risks": [
+        "S-01"
+      ],
+      "text": "grp_score = (avg - mean) / SD, computed over non-missing avg, SD divisor N-1. Missing avg stays missing."
+    },
+    {
+      "step": "s3",
+      "risks": [
+        "S-01",
+        "S-09"
+      ],
+      "text": "One row: Mean and StdDev of non-missing avg (divisor N-1)."
+    },
+    {
+      "step": "s4",
+      "risks": [
+        "S-10"
+      ],
+      "text": "Attach Mean and StdDev to every row."
+    },
+    {
+      "step": "s5",
+      "risks": [
+        "S-12"
+      ],
+      "text": "Rename avg to score_before_std. Add grp_score from s2 by PROVIDER_ID. Keep all rows."
+    }
+  ],
+  "properties": [
+    {
+      "id": "p1",
+      "kind": "missing_iff",
+      "description": "grp_score is missing exactly where total_cnt = 0",
+      "column": "grp_score",
+      "when": "total_cnt == 0"
+    },
+    {
+      "id": "p2",
+      "kind": "mean_sd",
+      "description": "over non-missing rows, grp_score has mean 0 and SD 1 (divisor N-1)",
+      "column": "grp_score",
+      "mean": 0,
+      "sd": 1,
+      "ddof": 1
+    },
+    {
+      "id": "p3",
+      "kind": "constant",
+      "description": "Mean and StdDev are constant across rows",
+      "columns": [
+        "Mean",
+        "StdDev"
+      ]
+    },
+    {
+      "id": "p4",
+      "kind": "equals",
+      "description": "grp_score = (score_before_std - Mean) / StdDev",
+      "left": "grp_score",
+      "right": "(score_before_std - Mean) / StdDev"
+    },
+    {
+      "id": "p5",
+      "kind": "equals",
+      "description": "measure_wt x total_cnt = 1 where total_cnt > 0",
+      "left": "measure_wt * total_cnt",
+      "right": "1",
+      "where": "total_cnt > 0"
+    }
+  ],
+  "assumptions": [],
+  "unknown_constructs": [],
+  "version": 1
+}
