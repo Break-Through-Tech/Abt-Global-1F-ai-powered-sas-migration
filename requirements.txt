@@ -2,4 +2,7 @@ langchain
 langchain-google-genai
 langgraph
 python-dotenv
+pandas
+numpy
+pyreadstat
 pytest
