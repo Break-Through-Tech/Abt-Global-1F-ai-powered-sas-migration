@@ -1,4 +1,2 @@
 .env
-.venv/
-__pycache__/
-runs/
+.venv
