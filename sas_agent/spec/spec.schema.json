@@ -1,0 +1,630 @@
+{
+  "$defs": {
+    "Arg": {
+      "properties": {
+        "param": {
+          "title": "Param",
+          "type": "string"
+        },
+        "value": {
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "param",
+        "value"
+      ],
+      "title": "Arg",
+      "type": "object"
+    },
+    "CallSite": {
+      "properties": {
+        "caller": {
+          "title": "Caller",
+          "type": "string"
+        },
+        "program_id": {
+          "title": "Program Id",
+          "type": "string"
+        },
+        "line": {
+          "title": "Line",
+          "type": "integer"
+        },
+        "args": {
+          "items": {
+            "$ref": "#/$defs/Arg"
+          },
+          "title": "Args",
+          "type": "array"
+        }
+      },
+      "required": [
+        "caller",
+        "program_id",
+        "line",
+        "args"
+      ],
+      "title": "CallSite",
+      "type": "object"
+    },
+    "Contract": {
+      "properties": {
+        "function": {
+          "title": "Function",
+          "type": "string"
+        },
+        "inputs": {
+          "items": {
+            "$ref": "#/$defs/InputSpec"
+          },
+          "title": "Inputs",
+          "type": "array"
+        },
+        "returns": {
+          "items": {
+            "$ref": "#/$defs/OutputSpec"
+          },
+          "title": "Returns",
+          "type": "array"
+        },
+        "omitted_params": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/OmittedParam"
+          },
+          "title": "Omitted Params",
+          "type": "array"
+        }
+      },
+      "required": [
+        "function",
+        "inputs",
+        "returns"
+      ],
+      "title": "Contract",
+      "type": "object"
+    },
+    "Facts": {
+      "properties": {
+        "params": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Params",
+          "type": "array"
+        },
+        "unused_params": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Unused Params",
+          "type": "array"
+        },
+        "output_params": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Output Params",
+          "type": "array"
+        },
+        "steps": {
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "title": "Steps",
+          "type": "array"
+        },
+        "constructs": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Constructs",
+          "type": "array"
+        },
+        "macro_vars_used": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Macro Vars Used",
+          "type": "array"
+        },
+        "macro_vars_created": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Macro Vars Created",
+          "type": "array"
+        },
+        "side_effects": {
+          "$ref": "#/$defs/SideEffects",
+          "default": {
+            "work_datasets_left": [],
+            "read_downstream": []
+          }
+        },
+        "call_sites": {
+          "default": [],
+          "items": {
+            "$ref": "#/$defs/CallSite"
+          },
+          "title": "Call Sites",
+          "type": "array"
+        }
+      },
+      "required": [
+        "params",
+        "steps"
+      ],
+      "title": "Facts",
+      "type": "object"
+    },
+    "InputSpec": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "type": {
+          "title": "Type",
+          "type": "string"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Key"
+        },
+        "requires": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Requires",
+          "type": "array"
+        }
+      },
+      "required": [
+        "name",
+        "type"
+      ],
+      "title": "InputSpec",
+      "type": "object"
+    },
+    "LogicStep": {
+      "properties": {
+        "step": {
+          "title": "Step",
+          "type": "string"
+        },
+        "risks": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Risks",
+          "type": "array"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "step",
+        "text"
+      ],
+      "title": "LogicStep",
+      "type": "object"
+    },
+    "OmittedParam": {
+      "properties": {
+        "param": {
+          "title": "Param",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        }
+      },
+      "required": [
+        "param",
+        "reason"
+      ],
+      "title": "OmittedParam",
+      "type": "object"
+    },
+    "OutputSpec": {
+      "properties": {
+        "name": {
+          "title": "Name",
+          "type": "string"
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "rows": {
+          "title": "Rows",
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "columns",
+        "rows"
+      ],
+      "title": "OutputSpec",
+      "type": "object"
+    },
+    "Property": {
+      "description": "A claim about an output that code can test on SAS's own results.\n\nkind and the fields it needs:\n- missing_iff: column, when       (column is missing exactly where the expression `when` is true)\n- mean_sd:     column, mean, sd, ddof   (over non-missing values)\n- constant:    columns            (each column has one value across rows)\n- equals:      left, right, where (left equals right within tol, where `where` holds and both are non-missing)\n- in_range:    column, min, max   (non-missing values lie in [min, max])",
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "enum": [
+            "missing_iff",
+            "mean_sd",
+            "constant",
+            "equals",
+            "in_range"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "description": {
+          "title": "Description",
+          "type": "string"
+        },
+        "output": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Output"
+        },
+        "column": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Column"
+        },
+        "columns": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Columns",
+          "type": "array"
+        },
+        "when": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "When"
+        },
+        "left": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Left"
+        },
+        "right": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Right"
+        },
+        "where": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Where"
+        },
+        "mean": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Mean"
+        },
+        "sd": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Sd"
+        },
+        "ddof": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Ddof"
+        },
+        "min": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Min"
+        },
+        "max": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Max"
+        },
+        "tol": {
+          "default": 1e-09,
+          "title": "Tol",
+          "type": "number"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "description"
+      ],
+      "title": "Property",
+      "type": "object"
+    },
+    "SideEffects": {
+      "properties": {
+        "work_datasets_left": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Work Datasets Left",
+          "type": "array"
+        },
+        "read_downstream": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Read Downstream",
+          "type": "array"
+        }
+      },
+      "title": "SideEffects",
+      "type": "object"
+    },
+    "Step": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "lines": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Lines",
+          "type": "array"
+        },
+        "reads": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Reads",
+          "type": "array"
+        },
+        "writes": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Writes",
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "lines"
+      ],
+      "title": "Step",
+      "type": "object"
+    },
+    "Unit": {
+      "properties": {
+        "id": {
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "const": "macro",
+          "default": "macro",
+          "title": "Kind",
+          "type": "string"
+        },
+        "source": {
+          "title": "Source",
+          "type": "string"
+        },
+        "lines": {
+          "maxItems": 2,
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "integer"
+            }
+          ],
+          "title": "Lines",
+          "type": "array"
+        },
+        "source_hash": {
+          "title": "Source Hash",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "source",
+        "lines",
+        "source_hash"
+      ],
+      "title": "Unit",
+      "type": "object"
+    }
+  },
+  "description": "A complete, versioned spec: code-written facts plus the model's layers.",
+  "properties": {
+    "purpose": {
+      "title": "Purpose",
+      "type": "string"
+    },
+    "contract": {
+      "$ref": "#/$defs/Contract"
+    },
+    "logic": {
+      "items": {
+        "$ref": "#/$defs/LogicStep"
+      },
+      "title": "Logic",
+      "type": "array"
+    },
+    "properties": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/Property"
+      },
+      "default": [],
+      "title": "Properties"
+    },
+    "assumptions": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Assumptions",
+      "type": "array"
+    },
+    "unknown_constructs": {
+      "default": [],
+      "items": {
+        "type": "string"
+      },
+      "title": "Unknown Constructs",
+      "type": "array"
+    },
+    "unit": {
+      "$ref": "#/$defs/Unit"
+    },
+    "facts": {
+      "$ref": "#/$defs/Facts"
+    },
+    "version": {
+      "default": 1,
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "purpose",
+    "contract",
+    "logic",
+    "unit",
+    "facts"
+  ],
+  "title": "Spec",
+  "type": "object"
+}
