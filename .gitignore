@@ -10,4 +10,5 @@ __pycache__/
 
 #pipeline run records (translation attempts, outputs, reports)
 runs/
+migrated/
 .venv
