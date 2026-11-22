@@ -7,6 +7,10 @@ documentation/
 #python environment
 .venv/
 __pycache__/
+.pytest_cache/
+
+#editor settings
+.vscode/
 
 #pipeline run records (translation attempts, outputs, reports)
 runs/
